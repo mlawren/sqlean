@@ -1,8 +1,8 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
--- .load dist/unicode
-select load_extension('dist/unicode');
+-- .load build/last/unicode
+select load_extension('build/last/unicode');
 
 select '01', lower('hElLo') = 'hello';
 select '02', nlower('hElLo') = 'hello';

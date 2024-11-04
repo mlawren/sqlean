@@ -6,7 +6,7 @@
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
-#include "sqlean.h"
+#include "../config.h"
 #include "time/extension.h"
 
 // sqlean_version returns the current Sqlean version.

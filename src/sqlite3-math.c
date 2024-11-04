@@ -9,7 +9,7 @@
 SQLITE_EXTENSION_INIT1
 
 #include "math/extension.h"
-#include "sqlean.h"
+#include "../config.h"
 
 // Returns the current Sqlean version.
 static void sqlean_version(sqlite3_context* context, int argc, sqlite3_value** argv) {

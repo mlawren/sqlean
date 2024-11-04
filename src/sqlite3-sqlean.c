@@ -3,27 +3,62 @@
 
 // Sqlean extensions bundle.
 
+#include "../config.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
-// include most of the extensions,
+#ifdef SQLEAN_CRYPTO
 #include "crypto/extension.h"
+#endif
+
+#ifdef SQLEAN_DEFINE
 #include "define/extension.h"
+#endif
+
+#ifdef SQLEAN_FILEIO
 #include "fileio/extension.h"
+#endif
+
+#ifdef SQLEAN_FUZZY
 #include "fuzzy/extension.h"
-#if !defined(_WIN32)
+#endif
+
+// was #if !defined(_WIN32)
+#ifdef SQLEAN_IPADDR
 #include "ipaddr/extension.h"
 #endif
-#include "math/extension.h"
-#include "regexp/extension.h"
-#include "stats/extension.h"
-#include "text/extension.h"
-#include "time/extension.h"
-#include "unicode/extension.h"
-#include "uuid/extension.h"
-#include "vsv/extension.h"
 
-#include "sqlean.h"
+#ifdef SQLEAN_MATH
+#include "math/extension.h"
+#endif
+
+#ifdef SQLEAN_REGEXP
+#include "regexp/extension.h"
+#endif
+
+#ifdef SQLEAN_STATS
+#include "stats/extension.h"
+#endif
+
+#ifdef SQLEAN_TEXT
+#include "text/extension.h"
+#endif
+
+#ifdef SQLEAN_TIME
+#include "time/extension.h"
+#endif
+
+#ifdef SQLEAN_UNICODE
+#include "unicode/extension.h"
+#endif
+
+#ifdef SQLEAN_UUID
+#include "uuid/extension.h"
+#endif
+
+#ifdef SQLEAN_VSV
+#include "vsv/extension.h"
+#endif
 
 // Returns the current Sqlean version.
 static void sqlean_version(sqlite3_context* context, int argc, sqlite3_value** argv) {
@@ -38,22 +73,60 @@ __declspec(dllexport)
     SQLITE_EXTENSION_INIT2(api);
     static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
     sqlite3_create_function(db, "sqlean_version", 0, flags, 0, sqlean_version, 0, 0);
+
+#ifdef SQLEAN_CRYPTO
     crypto_init(db);
+#endif
+
+#ifdef SQLEAN_DEFINE
     define_init(db);
+#endif
+
+#ifdef SQLEAN_FILEIO
     fileio_init(db);
+#endif
+
+#ifdef SQLEAN_FUZZY
     fuzzy_init(db);
-#if !defined(_WIN32)
+#endif
+
+// was #if !defined(_WIN32)
+#ifdef SQLEAN_IPADDR
     ipaddr_init(db);
 #endif
+
+#ifdef SQLEAN_MATH
     math_init(db);
+#endif
+
+#ifdef SQLEAN_REGEXP
     regexp_init(db);
+#endif
+
+#ifdef SQLEAN_STATS
     stats_init(db);
+#endif
+
+#ifdef SQLEAN_TEXT
     text_init(db);
-#if !defined(_WIN32) || defined(_WIN64)
+#endif
+
+// was #if !defined(_WIN32) || defined(_WIN64)
+#ifdef SQLEAN_TIME
     time_init(db);
 #endif
+
+#ifdef SQLEAN_UNICODE
     unicode_init(db);
+#endif
+
+#ifdef SQLEAN_UUID
     uuid_init(db);
+#endif
+
+#ifdef SQLEAN_VSV
     vsv_init(db);
+#endif
+
     return SQLITE_OK;
 }

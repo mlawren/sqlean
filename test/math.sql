@@ -1,7 +1,7 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/math
+.load build/last/math
 
 -- rounding (5)
 select '1_01', math_ceil(3.3) = 4;

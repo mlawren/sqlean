@@ -1,7 +1,7 @@
 -- Copyright (c) 2024 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/time
+.load build/last/time
 
 -- 2011-11-18 00:00:00 = 1321574400 sec
 -- 2011-11-18 15:56:35 = 1321631795 sec

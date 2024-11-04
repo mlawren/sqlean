@@ -74,7 +74,7 @@ select name, body from sqlean_define where type = 'scalar';
 Scalar functions are compiled into prepared statements. SQLite requires these statements to be freed before the connection is closed. Unfortunately, there is no way to free them automatically. Therefore, always execute `define_free()` before disconnecting:
 
 ```
-sqlite> .load dist/define
+sqlite> .load ./define
 sqlite> select define('subxy', '? - ?');
 ...
 sqlite> select define_free();

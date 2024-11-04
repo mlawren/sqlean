@@ -1,0 +1,65 @@
+use system cc cc-shared
+
+set extopts {}
+set extensions {}
+foreach ext [lsort [split [glob -tails -directory $autosetup(srcdir)/src sqlite3-*.c] ] ] {
+    set ext [string range $ext 0 [expr {[string length $ext] - 3}]]
+    set ext [string range $ext 8 end]
+    set extensions($ext) 1
+    append extopts "$ext=1 => {Disable the '$ext' extension}\n"
+}
+
+options "
+    abs-dirs       => {Enable absolute directory names in Makefile}
+    local-sqlite   => {Force bundled sqlite headers (make LOCAL_SQLITE=1)}
+    sqlite-incdir:  => {Local sqlite header dir (make SQLITE_INCDIR=\$dir)}
+    compile-debug  => {Compile with debug info (make SQLEAN_DEBUG=1)}
+    tag:value      => {Extra suffix for build directory (make TAG=XXX)}
+    $extopts
+    verbose=0      => {Print recipie commands (make VERBOSE=1)}
+"
+
+foreach ext [array names extensions ] {
+    if {![opt-bool $ext]} {
+        array unset extensions $ext
+        define [string toupper SQLEAN_$ext] 0
+    } else {
+        define [string toupper SQLEAN_$ext] 1
+    }
+}
+define SQLEAN_NAMES [array names extensions]
+
+if {[opt-str tag o]} {
+    define SQLEAN_TAG $o
+} else {
+    define SQLEAN_TAG {}
+}
+
+define VERBOSE [opt-bool verbose ]
+define abs_dirs [opt-bool abs-dirs]
+
+
+define local_sqlite {}
+if {[opt-bool local-sqlite]} {
+    msg-result "Forcing local SQLite headers"
+    define local_sqlite 1
+} elseif {![cc-check-includes sqlite3ext.h]} {
+    msg-result "  Using local SQLite headers"
+    define local_sqlite 1
+}
+
+define sqlite_incdir {}
+if {[opt-str sqlite-incdir o]} {
+    msg-result "User-defined SQLITE_INCDIR"
+    define sqlite_incdir $o
+    define local_sqlite 1
+}
+
+set version [exec git tag --points-at HEAD]
+if {$version eq ""} {
+    set version main
+}
+define SQLEAN_VERSION $version
+
+make-config-header config.h -auto SQLEAN_*
+make-template Makefile.in

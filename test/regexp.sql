@@ -1,7 +1,7 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/regexp
+.load build/last/regexp
 
 -- replace case
 select '01', regexp_replace('the year is 2021', '[0-9]+', '2050') = 'the year is 2050';

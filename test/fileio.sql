@@ -1,7 +1,7 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/fileio
+.load build/last/fileio
 
 -- fileio_ls
 select '01', (name, mode, size) = ('LICENSE', 33188, 1108) from fileio_ls('LICENSE');

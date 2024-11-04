@@ -1,7 +1,7 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/vsv
+.load build/last/vsv
 
 .shell echo '11,Diane,London' > people.csv
 .shell echo '22,Grace,Berlin' >> people.csv

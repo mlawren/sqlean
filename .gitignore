@@ -1,3 +1,7 @@
 dist
+/build
+/config.h
 /config.log
 /jimsh0
+/Makefile
+/sqlite/sqlite-trunk*

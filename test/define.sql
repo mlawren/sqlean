@@ -1,7 +1,7 @@
 -- Copyright (c) 2022 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/define
+.load build/last/define
 
 select define('sumn', '?1 * (?1 + 1) / 2');
 select '01', sumn(0) = 0;

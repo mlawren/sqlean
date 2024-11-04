@@ -1,0 +1,222 @@
+# Makefile.in
+#
+# How much should we tell the user
+VERBOSE   ?= @VERBOSE@
+ifeq ($(VERBOSE),1)
+	HIDE = 
+else
+	HIDE = @
+endif
+
+# What architecture are we running on
+BUILD         = @build@
+BUILD_CPU    := @build_cpu@
+BUILD_VENDOR := @build_vendor@
+BUILD_OS     := @build_os@
+
+# What architecture are we building for
+HOST          = @host@
+HOST_CPU     := @host_cpu@
+HOST_VENDOR  := @host_vendor@
+HOST_OS      := @host_os@
+
+VERSION       = '"$(or $(shell git tag --points-at HEAD),main)"'
+TAG          ?= $(if @SQLEAN_TAG@,--@SQLEAN_TAG,)
+
+# Where we are building from and to
+ifeq (@abs_dirs@,1)
+    TOPDIR := @abs_top_srcdir@
+else
+    TOPDIR := @srcdir@
+endif
+SRCDIR           = $(TOPDIR)/src
+BUILDDIR        ?= $(TOPDIR)/build
+HOSTDIR         ?= $(BUILDDIR)/$(HOST)$(TAG)
+LASTDIR         ?= $(BUILDDIR)/last
+TESTDIR         ?= $(TOPDIR)/test
+SQLITEDIR       := $(TOPDIR)/sqlite
+SQLITE_INCDIR   ?= $(if @sqlite_incdir@,@sqlite_incdir@,$(SQLITEDIR))
+
+# ./configure told us how to build and call shared objects
+CC              := @CC@
+CPPFLAGS        := @CPPFLAGS@
+
+CFLAGS.configure = @CFLAGS@
+CFLAGS.linux-gnu = -z now -z relro -Wall -Wsign-compare -Wno-unknown-pragmas
+CFLAGS.mingw32   = -fPIC -DSQLEAN_OMIT_UUID7 # autosetup misses this
+CFLAGS.windo     = 
+CFLAGS.win32     = -DSQLEAN_OMIT_UUID7
+CFLAGS.macos     = -Wall -Wsign-compare
+CFLAGS.CTEST     = -Wall -Wsign-compare -Wno-unknown-pragmas
+
+CFLAGS          := $(CFLAGS.configure) $(CFLAGS.$(HOST_OS))
+
+SH_CFLAGS       := @SHOBJ_CFLAGS@
+SH_LDFLAGS      := @SHOBJ_LDFLAGS@
+SH_SOEXT        := @SH_SOEXT@
+
+INCLUDES        := -I$(SRCDIR)
+INCLUDE_regexp  := -include $(SRCDIR)/regexp/constants.h
+LOCAL_SQLITE    := @local_sqlite@
+INCLUDES        += $(if $(LOCAL_SQLITE),-I$(SQLITE_INCDIR),)
+
+# List of possible extensions
+NAMES           := @SQLEAN_NAMES@
+NAMES_alone     := $(filter-out sqlean,$(NAMES))
+NAME_sqlean     := $(filter sqlean,$(NAMES))
+
+SQLITE_URL      = https://sqlite.org/src/tarball/trunk/sqlite-trunk.tar.gz
+SQLITE_TRUNKDIR = $(SQLITEDIR)/sqlite-trunk
+SQLITE_H        = sqlite3.h src/sqlite3ext.h src/test_windirent.h
+
+
+## Set system dependent tools for recipies
+#ifeq ($(OS),Windows_NT)
+#	CP = copy
+#	RM = del /F /Q
+#	RMDIR = -RMDIR /S /Q
+#	MKDIR = -mkdir -p
+#	ERRIGNORE = 2>NUL || true
+#	SEP=\\
+#else
+	CP = cp
+	LN = ln -s -r
+	RM = rm -f
+	RMDIR = rm -rf
+	MKDIR = mkdir -p
+	ERRIGNORE = 2>/dev/null
+	SEP=/
+#endif
+
+
+# Start of recipies, defaulting to 'all'
+.PHONY: all
+
+all: $(NAMES_alone) $(NAME_sqlean)
+
+$(SQLITE_TRUNKDIR):
+	$(HIDE)$(RMDIR) $(TOPDIR)/sqlite-trunk
+	$(HIDE)cd $(SQLITEDIR) && curl -L --remote-name $(SQLITE_URL)
+	$(HIDE)cd $(SQLITEDIR) && tar zxf $(SQLITE_TRUNKDIR).tar.gz
+	$(HIDE)$(RM) $(SQLITE_TRUNKDIR).tar.gz
+	$(HIDE)cd $(SQLITE_TRUNKDIR) && ./configure && make sqlite3.h
+
+local-sqlite:
+	$(HIDE)$(RM) $(SQLITEDIR)/*.h
+	$(HIDE) \
+	    for file in $(SQLITE_H); do \
+	        $(CP) $(SQLITE_TRUNKDIR)/$$file $(SQLITEDIR); \
+	    done
+
+$(BUILDDIR):
+	$(HIDE)$(MKDIR) $@
+
+$(HOSTDIR):
+	$(HIDE)$(MKDIR) $@
+
+$(LASTDIR): $(HOSTDIR) Makefile
+	@echo " + Setting '$@'"
+	$(HIDE)$(RM) $(LASTDIR)
+	$(HIDE)$(LN) $(HOSTDIR) $(LASTDIR)
+
+$(HOSTDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/sqlean.h
+	@echo " + Compiling '$<'"
+	$(HIDE)$(MKDIR) $(@D)
+	$(HIDE)$(CC) $(CPPFLAGS) $(CFLAGS) $(SH_CFLAGS) $(INCLUDES) -c \
+	    -o $@ \
+	    $<
+
+
+define EXT_template
+
+SRCDIR_$(1)   := $(SRCDIR)/$(1)
+HOSTDIR_$(1)  := $(HOSTDIR)/$(1)
+HDRS_$(1)     := $$(wildcard $$(SRCDIR_$(1))/*.h $$(SRCDIR_$(1))/*/*.h)
+SRCS_$(1)     := $$(wildcard $$(SRCDIR_$(1))/*.c $$(SRCDIR_$(1))/*/*.c)
+OBJS_$(1)     := $$(subst $$(SRCDIR),$$(HOSTDIR),$$(SRCS_$(1):.c=.o))
+EXT_$(1)      := $$(HOSTDIR)/$(1)$$(SH_SOEXT)
+
+OBJS_sqlean += $$(OBJS_$(1))
+
+$$(HOSTDIR_$(1))/%.o: $$(SRCDIR_$(1))/%.c $$(HDRS_$(1))
+	@echo "   + Compiling '$$<'"
+	$$(HIDE)$$(RM) $$(EXT_$(1)) $$(LAST_$(1))
+	$$(HIDE)$$(MKDIR) $$(@D)
+	$$(HIDE)$$(CC) $(CPPFLAGS) $$(CFLAGS) $$(SH_CFLAGS) $$(INCLUDES) \
+		$$(INCLUDE_$(1)) -c \
+        -o $$@ \
+	    $$<
+
+$$(EXT_$(1)): $$(HOSTDIR)/sqlite3-$(1).o $$(OBJS_$(1))
+	$$(HIDE)$$(RM) $$@ $$(LAST_$(1))
+	@echo "   + Linking '$$@'"
+	$$(HIDE)$$(CC) $$(CFLAGS) $$(SH_LDFLAGS) -o $$@ $$^
+
+$(1): $$(LASTDIR) $$(EXT_$(1)) test-$(1)
+
+endef
+
+#$(foreach ext, $(NAMES_alone), $(info $(call EXT_template,$(ext))))
+$(foreach ext, $(NAMES_alone), $(eval $(call EXT_template,$(ext))))
+
+
+EXT_sqlean := $(HOSTDIR)/sqlean$(SH_SOEXT)
+
+$(EXT_sqlean): $(HOSTDIR)/sqlite3-sqlean.o $(OBJS_sqlean)
+	$(HIDE)$(RM) $@ $(LAST_sqlean)
+	@echo "   + Linking '$@'"
+	$(HIDE)$(CC) $(CFLAGS) $(SH_LDFLAGS) -o $@ $^
+
+sqlean: $(LASTDIR) $(EXT_sqlean) test-sqlean
+
+
+.PHONY: test test_sql $(TEST_NAMES)
+
+TEST_NAMES := $(patsubst %,test-%, $(NAMES))
+TEST_SQL   := $(addprefix test-, \
+              $(basename \
+              $(notdir \
+              $(wildcard $(TESTDIR)/*.sql))))
+
+
+ifeq ($(BUILD),$(HOST))
+
+test: $(TEST_NAMES)
+
+$(TEST_SQL):
+	@echo "   + Running '$(TESTDIR)/$(subst test-,,$@).sql'"
+	$(HIDE)$(TESTDIR)/sqltest $(TESTDIR)/$(subst test-,,$@).sql
+
+else
+
+test:
+	@echo " + No testing under $(HOST) crossbuild"
+
+$(TEST_SQL):
+	@echo "   + Skipping $@ ($(HOST) crossbuild)"
+
+endif
+
+
+
+.PHONY: clean clean_build clean_last clean_makefile clean_target realclean
+
+clean: clean_last clean_target
+
+clean_build:
+	$(HIDE)$(RMDIR) $(BUILDDIR)
+
+clean_last:
+	$(HIDE)$(RMDIR) $(LASTDIR)
+
+clean_makefile:
+	$(HIDE)$(RMDIR) $(TOPDIR)/Makefile
+
+clean_sqlite:
+	$(HIDE)$(RMDIR) $(SQLITE_TRUNKDIR)
+
+clean_target:
+	$(HIDE)$(RMDIR) $(HOSTDIR)
+
+realclean: clean clean_build clean_makefile clean_sqlite
+

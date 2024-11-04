@@ -1,7 +1,7 @@
 -- Copyright (c) 2023 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/sqlean
+.load build/last/sqlean
 
 -- crypto
 select '1_01', hex(sha1('abc')) = upper('a9993e364706816aba3e25717850c26c9cd0d89d');
