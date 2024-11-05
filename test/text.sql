@@ -1,8 +1,6 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/text
-
 -- Substring: start only
 select '1_01', text_substring('hello world', 0) = 'hello world';
 select '1_02', text_substring('hello world', 1) = 'hello world';

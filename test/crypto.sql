@@ -1,8 +1,6 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/crypto
-
 select '1_01', crypto_md5(null) is NULL;
 select '1_02', hex(crypto_md5('')) = upper('d41d8cd98f00b204e9800998ecf8427e');
 select '1_03', hex(crypto_md5('abc')) = upper('900150983cd24fb0d6963f7d28e17f72');
