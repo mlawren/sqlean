@@ -1,8 +1,6 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/fileio
-
 -- fileio_ls
 select 'debug 01:', name, mode, size from fileio_ls('LICENSE')
     where sqlean_version('SQLEAN_MSYSTEM');
