@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+# Script to run test/*sql files. Pass error lines to stderr, and exit
+# with a non-zero value in that case.
+
+me=$(basename $0)
+
+if [ $# -lt 1 ]; then
+    echo "usage: $me TEST.sql [...]" 1>&2
+    exit 1
+fi
+
+fail=0
+for test in "$@"; do
+    localfail=0
+    while read -r line; do
+
+        case "$line" in
+            [0-9][0-9]*1)
+                # echo $test: $line
+                ;;
+            [0-9][0-9]*)
+                ((localfail++))
+                echo $test: $line 1>&2
+                ;;
+            *) # ignore
+                ;;
+        esac
+    done < <(
+    HOME=. sqlite3 <<-EOF
+		.bail on
+		.headers off
+		.mode tabs
+		.read $test
+		.quit
+EOF
+    )
+
+    ((fail += $localfail))
+
+    if [ -z "$MAKELEVEL" ]; then
+        if [ $localfail -gt 0 ]; then
+            echo $test: failures: $localfail
+        else
+            echo $test: ok
+        fi
+    fi
+done
+
+if [ $fail -gt 0 ]; then
+    false
+else
+    true
+fi
