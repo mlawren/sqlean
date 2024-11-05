@@ -1,8 +1,6 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/uuid
-
 -- uuid4
 select '1_01', uuid4() like '________-____-4___-____-____________';
 select '1_02', gen_random_uuid() like '________-____-4___-____-____________';
