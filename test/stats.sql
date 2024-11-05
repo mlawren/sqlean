@@ -1,8 +1,6 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/stats
-
 select '1_01', stats_perc(value, 25) = 25.5 from stats_seq(1, 99);
 select '1_02', stats_p25(value) = 25.5 from stats_seq(1, 99);
 

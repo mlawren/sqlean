@@ -1,8 +1,6 @@
 -- Copyright (c) 2021 Anton Zhiyanov, MIT License
 -- https://github.com/nalgeon/sqlean
 
-.load dist/fuzzy
-
 -- Damerau-Levenshtein distance
 select '01', fuzzy_damlev('abc', 'abc') = 0;
 select '02', fuzzy_damlev('abc', '') = 3;
