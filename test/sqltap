@@ -1,0 +1,18 @@
+#!/usr/bin/env sh
+
+me=$(basename $0)
+
+if [ $# -lt 1 ]; then
+    echo "usage: $me TEST.sql [...]" 1>&2
+    exit 1
+fi
+
+for test in $@; do
+    sqlite3 -noheader <<EOF | sed -e 's/^\^TAP //; s/\^TAP /\n/g'
+.load build/last/tap
+.headers off
+.mode tabs
+.read $test
+.quit
+EOF
+done
