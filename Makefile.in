@@ -64,6 +64,7 @@ INCLUDES        += $(if $(LOCAL_SQLITE),-I$(SQLITE_INCDIR),)
 NAMES           := @SQLEAN_NAMES@
 NAMES_alone     := $(filter-out sqlean,$(NAMES))
 NAME_sqlean     := $(filter sqlean,$(NAMES))
+NAMES_TEST      := $(patsubst %,test-%, $(NAMES_alone) $(NAME_sqlean))
 
 SQLITE_URL      = https://sqlite.org/src/tarball/trunk/sqlite-trunk.tar.gz
 SQLITE_TRUNKDIR = $(SQLITEDIR)/sqlite-trunk
@@ -119,7 +120,7 @@ $(LASTDIR): $(HOSTDIR) Makefile
 	$(HIDE)$(RM) $(LASTDIR)
 	$(HIDE)$(LN) $(HOSTDIR) $(LASTDIR)
 
-$(HOSTDIR)/%.o: $(SRCDIR)/%.c $(SRCDIR)/sqlean.h
+$(HOSTDIR)/%.o: $(SRCDIR)/%.c $(TOPDIR)/config.h
 	@echo " + Compiling '$<'"
 	$(HIDE)$(MKDIR) $(@D)
 	$(HIDE)$(CC) $(CPPFLAGS) $(CFLAGS) $(SH_CFLAGS) $(INCLUDES) -c \
@@ -152,7 +153,7 @@ $$(EXT_$(1)): $$(HOSTDIR)/sqlite3-$(1).o $$(OBJS_$(1))
 	@echo "   + Linking '$$@'"
 	$$(HIDE)$$(CC) $$(CFLAGS) $$(SH_LDFLAGS) -o $$@ $$^
 
-$(1): $$(LASTDIR) $$(EXT_$(1)) test-$(1)
+$(1): $$(LASTDIR) $$(EXT_$(1))
 
 endef
 
@@ -167,12 +168,11 @@ $(EXT_sqlean): $(HOSTDIR)/sqlite3-sqlean.o $(OBJS_sqlean)
 	@echo "   + Linking '$@'"
 	$(HIDE)$(CC) $(CFLAGS) $(SH_LDFLAGS) -o $@ $^
 
-sqlean: $(LASTDIR) $(EXT_sqlean) test-sqlean
+sqlean: $(LASTDIR) $(EXT_sqlean)
 
 
-.PHONY: test test_sql $(TEST_NAMES)
+.PHONY: test test_sql $(NAMES_TEST)
 
-TEST_NAMES := $(patsubst %,test-%, $(NAMES))
 TEST_SQL   := $(addprefix test-, \
               $(basename \
               $(notdir \
@@ -181,10 +181,10 @@ TEST_SQL   := $(addprefix test-, \
 
 ifeq ($(BUILD),$(HOST))
 
-test: $(TEST_NAMES)
+test: $(NAMES_TEST)
 
-$(TEST_SQL):
-	@echo "   + Running '$(TESTDIR)/$(subst test-,,$@).sql'"
+$(TEST_SQL): test-%: %
+	@echo " + Running '$(TESTDIR)/$(subst test-,,$@).sql'"
 	$(HIDE)$(TESTDIR)/sqltest $(TESTDIR)/$(subst test-,,$@).sql
 
 else
@@ -193,7 +193,7 @@ test:
 	@echo " + No testing under $(HOST) crossbuild"
 
 $(TEST_SQL):
-	@echo "   + Skipping $@ ($(HOST) crossbuild)"
+	@echo " + Skipping $@ ($(HOST) crossbuild)"
 
 endif
 
