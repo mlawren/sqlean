@@ -21,7 +21,7 @@ options "
 
 cc-check-functions timespec_get
 if { ![cc-check-includes "arpa/inet.h"] } {
-    if { ![cc-check-includes "Winsock2.h"] )} {
+    if { ![cc-check-includes "Winsock2.h"] } {
         msg-result "  Extension 'ipaddr' is unsupported here."
         array unset names ipaddr
     }
