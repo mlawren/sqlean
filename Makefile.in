@@ -34,7 +34,7 @@ BUILDDIR        ?= $(TOPDIR)/build
 HOSTDIR         ?= $(BUILDDIR)/$(HOST)$(TAG)
 LASTDIR         ?= $(BUILDDIR)/last
 TESTDIR         ?= $(TOPDIR)/test
-SQLITEDIR       := $(TOPDIR)/sqlite
+SQLITEDIR       := $(SRCDIR)/sqlite
 SQLITE_INCDIR   ?= $(if @sqlite_incdir@,@sqlite_incdir@,$(SQLITEDIR))
 
 # ./configure told us how to build and call shared objects

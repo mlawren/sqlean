@@ -4,4 +4,4 @@ dist
 /config.log
 /jimsh0
 /Makefile
-/sqlite/sqlite-trunk*
+/src/sqlite/sqlite-trunk*
