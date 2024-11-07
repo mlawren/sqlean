@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include "../config.h"
+
 // Month is a month of the year.
 enum Month {
     January = 1,

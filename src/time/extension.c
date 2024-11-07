@@ -716,7 +716,9 @@ static void fn_dur_const(sqlite3_context* context, int argc, sqlite3_value** arg
 
 int time_init(sqlite3* db) {
     static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
+#ifdef HAVE_TIMESPEC_GET
     static const int flags_nd = SQLITE_UTF8 | SQLITE_INNOCUOUS;
+#endif
 
     // constructors
 #ifdef HAVE_TIMESPEC_GET
