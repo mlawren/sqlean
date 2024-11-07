@@ -19,6 +19,13 @@ options "
     verbose=0      => {Print recipie commands (make VERBOSE=1)}
 "
 
+cc-check-functions timespec_get
+cc-check-includes "arpa/inet.h" "Winsock2.h"
+
+if { ![get-define HAVE_ARPA_INET_H] && ![ get-define HAVE_WINSOCK2_H] } {
+    msg-result "  Extension 'ipaddr' is unsupported here."
+    array unset names ipaddr
+}
 
 foreach ext [array names names ] {
     if {![opt-bool $ext]} {
@@ -28,6 +35,7 @@ foreach ext [array names names ] {
         define [string toupper SQLEAN_$ext] 1
     }
 }
+
 define SQLEAN_NAMES [array names names]
 
 if {[opt-str tag o]} {
@@ -55,8 +63,6 @@ if {[opt-str sqlite-incdir o]} {
     define sqlite_incdir $o
     define local_sqlite 1
 }
-
-cc-check-functions timespec_get
 
 set version [exec git tag --points-at HEAD]
 if {$version eq ""} {
