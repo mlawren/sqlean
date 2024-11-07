@@ -1,12 +1,12 @@
 use system cc cc-shared
 
-set extopts {}
-set extensions {}
+array set names {}
+
 foreach ext [lsort [split [glob -tails -directory $autosetup(srcdir)/src sqlite3-*.c] ] ] {
     set ext [string range $ext 0 [expr {[string length $ext] - 3}]]
     set ext [string range $ext 8 end]
-    set extensions($ext) 1
-    append extopts "$ext=1 => {Disable the '$ext' extension}\n"
+    set names($ext) 1
+    append disable_opts "$ext=1 => {Disable the '$ext' extension}\n"
 }
 
 options "
@@ -15,19 +15,20 @@ options "
     sqlite-incdir:  => {Local sqlite header dir (make SQLITE_INCDIR=\$dir)}
     compile-debug  => {Compile with debug info (make SQLEAN_DEBUG=1)}
     tag:value      => {Extra suffix for build directory (make TAG=XXX)}
-    $extopts
+    $disable_opts
     verbose=0      => {Print recipie commands (make VERBOSE=1)}
 "
 
-foreach ext [array names extensions ] {
+
+foreach ext [array names names ] {
     if {![opt-bool $ext]} {
-        array unset extensions $ext
+        array unset names $ext
         define [string toupper SQLEAN_$ext] 0
     } else {
         define [string toupper SQLEAN_$ext] 1
     }
 }
-define SQLEAN_NAMES [array names extensions]
+define SQLEAN_NAMES [array names names]
 
 if {[opt-str tag o]} {
     define SQLEAN_TAG $o
@@ -54,6 +55,8 @@ if {[opt-str sqlite-incdir o]} {
     define sqlite_incdir $o
     define local_sqlite 1
 }
+
+cc-check-functions timespec_get
 
 set version [exec git tag --points-at HEAD]
 if {$version eq ""} {

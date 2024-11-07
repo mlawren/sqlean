@@ -184,8 +184,10 @@ Duration time_sub(Time t, Time u);
 // time_since returns the time elapsed since t.
 Duration time_since(Time t);
 
+#ifdef HAVE_TIMESPEC_GET
 // time_until returns the duration until t.
 Duration time_until(Time t);
+#endif
 
 // time_add_date returns the time corresponding to adding the
 // given number of years, months, and days to t.

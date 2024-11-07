@@ -45,7 +45,6 @@ CFLAGS.configure = @CFLAGS@
 CFLAGS.linux-gnu = -z now -z relro -Wall -Wsign-compare -Wno-unknown-pragmas
 CFLAGS.mingw32   = -fPIC -DSQLEAN_OMIT_UUID7 # autosetup misses this
 CFLAGS.windo     = 
-CFLAGS.win32     = -DSQLEAN_OMIT_UUID7
 CFLAGS.macos     = -Wall -Wsign-compare
 CFLAGS.CTEST     = -Wall -Wsign-compare -Wno-unknown-pragmas
 
