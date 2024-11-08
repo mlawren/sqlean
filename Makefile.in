@@ -41,14 +41,14 @@ SQLITE_INCDIR   ?= $(if @sqlite_incdir@,@sqlite_incdir@,$(SQLITEDIR))
 CC              := @CC@
 CPPFLAGS        := @CPPFLAGS@
 
-CFLAGS.configure = @CFLAGS@
-CFLAGS.linux-gnu = -z now -z relro -Wall -Wsign-compare -Wno-unknown-pragmas
-CFLAGS.mingw32   = -Wall -Wsign-compare -Wno-unknown-pragmas
+CFLAGS.default   = @CFLAGS@ -Wall -Wsign-compare -Wno-unknown-pragmas
+CFLAGS.linux-gnu = -z now -z relro
+CFLAGS.mingw32   = 
 CFLAGS.windo     = 
-CFLAGS.macos     = -Wall -Wsign-compare
-CFLAGS.CTEST     = -Wall -Wsign-compare -Wno-unknown-pragmas
+CFLAGS.macos     = 
+CFLAGS.CTEST     = 
 
-CFLAGS          := $(CFLAGS.configure) $(CFLAGS.$(HOST_OS)) $(CFLAGS.add)
+CFLAGS          := $(CFLAGS.default) $(CFLAGS.$(HOST_OS)) $(CFLAGS.add)
 
 SH_CFLAGS       := @SHOBJ_CFLAGS@
 SH_LDFLAGS      := @SHOBJ_LDFLAGS@
