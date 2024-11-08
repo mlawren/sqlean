@@ -65,7 +65,7 @@
 #include <string.h>
 #include <time.h>
 
-#include "../config.h"
+#include "sqlean.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 

@@ -3,7 +3,7 @@
 
 // Sqlean extensions bundle.
 
-#include "../config.h"
+#include "sqlean.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT1
 
@@ -59,11 +59,6 @@ SQLITE_EXTENSION_INIT1
 #ifdef SQLEAN_VSV
 #include "vsv/extension.h"
 #endif
-
-// Returns the current Sqlean version.
-static void sqlean_version(sqlite3_context* context, int argc, sqlite3_value** argv) {
-    sqlite3_result_text(context, SQLEAN_VERSION, -1, SQLITE_STATIC);
-}
 
 #ifdef _WIN32
 __declspec(dllexport)
