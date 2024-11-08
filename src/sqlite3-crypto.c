@@ -17,5 +17,6 @@ __declspec(dllexport)
     SQLITE_EXTENSION_INIT2(api);
     static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
     sqlite3_create_function(db, "sqlean_version", 0, flags, 0, sqlean_version, 0, 0);
+    sqlite3_create_function(db, "sqlean_version", 1, flags, 0, sqlean_version, 0, 0);
     return crypto_init(db);
 }
