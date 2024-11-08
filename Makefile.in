@@ -1,0 +1,262 @@
+# Makefile.in
+VERSION         := @SQLEAN_VERSION@
+VERBOSE         ?=
+HIDE            := $(if $(VERBOSE),,@)
+
+# The platform are we running on
+BUILD           := @build@
+BUILD_CPU       := @build_cpu@
+BUILD_VENDOR    := @build_vendor@
+BUILD_OS        := @build_os@
+REALPATH        := @REALPATH@
+
+# The platform are we targeting
+HOST            := @host@
+HOST_CPU        := @host_cpu@
+HOST_VENDOR     := @host_vendor@
+HOST_OS         := @host_os@
+
+# Directory definitions
+TOPDIR          := @srcdir@
+BUILDDIR        := $(TOPDIR)/build
+DISTDIR         := $(TOPDIR)/dist
+SRCDIR          := $(TOPDIR)/src
+TESTDIR         := $(TOPDIR)/test
+HOSTDIR         := $(BUILDDIR)/$(HOST)
+HOSTTEST        := $(HOSTDIR)/test
+SQLITEDIR       := $(SRCDIR)/sqlite
+SQLITE_TRUNKDIR := $(SQLITEDIR)/sqlite-trunk
+SQLITE_INCDIR   := $(if @sqlite_incdir@,@sqlite_incdir@,$(SQLITEDIR))
+
+# Compiler and flags
+CC                := @CC@
+CPPFLAGS          := @CPPFLAGS@
+CFLAGS_linux-gnu  := -z now -z relro
+CFLAGS_default    := @CFLAGS@ \
+                        @CFLAG_MAX_ERRORS@  \
+                        $(CFLAGS_$(HOST_OS)) \
+                        -Wall \
+                        -Wsign-compare \
+                        -Wno-unknown-pragmas \
+                        -Wundef \
+                        -O3
+CFLAGS            := $(CFLAGS_default) $(CFLAGS_add)
+
+INCLUDES          := -I$(HOSTDIR) -I$(SRCDIR) \
+                      $(if @local_sqlite@,-I$(SQLITE_INCDIR),)
+
+# Shared library flags
+SH_CFLAGS         := @SHOBJ_CFLAGS@
+SH_LDFLAGS        := @SHOBJ_LDFLAGS@
+SH_SOEXT          := @SH_SOEXT@
+
+# Extension-specific customizations
+INCLUDE_regexp    := -include $(SRCDIR)/regexp/constants.h
+CFLAGS_crypto     := -O1
+LDLIBS_T_time     := -lm
+SH_LDFLAGS_ipaddr := @SHOBJ_LDFLAGS_ipaddr@
+
+# List of possible extensions
+TARGETS_alone     := $(sort $(filter-out sqlean,@TARGETS@))
+TARGET_sqlean     := $(filter sqlean,@TARGETS@)
+TARGETS           := $(TARGETS_alone) $(TARGET_sqlean)
+
+# Locations for local-sqlite headers
+SQLITE_URL        := https://sqlite.org/src/tarball/trunk/sqlite-trunk.tar.gz
+SQLITE_H          := sqlite3.h src/sqlite3ext.h
+SQLITE_TW_H       := src/test_windirent.h
+
+# System tools for recipies
+CP        := cp
+LN        := ln -s -r
+RM        := rm -f
+RMDIR     := rm -rf
+MKDIR     := mkdir -p
+ERRIGNORE := 2>/dev/null
+SEP       := /
+STRIP     := @STRIP@
+TARZIP    := @TARZIP@
+
+
+# Start of recipies, defaulting to 'all'
+.PHONY: all
+
+all: $(TARGETS_alone) $(TARGET_sqlean)
+
+$(HOSTDIR)/%.o: $(SRCDIR)/%.c $(HOSTDIR)/_config.h $(SRCDIR)/config.h $(SRCDIR)/sqlean.h
+	@echo " + Compiling '$<'"
+	$(HIDE)$(MKDIR) $(@D)
+	$(HIDE)$(CC) $(CPPFLAGS) $(CFLAGS) $(SH_CFLAGS) $(INCLUDES) \
+           -c -o $@ $<
+
+
+define LIB_template
+
+SRCDIR_$(1)    := $$(SRCDIR)/$(1)
+HOSTDIR_$(1)   := $$(HOSTDIR)/$(1)
+HOSTTEST_$(1)  := $$(HOSTTEST)/$(1)
+TESTDIR_$(1)   := $$(TESTDIR)/$(1)
+HDRS_$(1)      := $$(HOSTDIR)/_config.h \
+                   $$(SRCDIR)/config.h \
+                   $$(SRCDIR)/sqlean.h \
+		   $$(wildcard $$(SRCDIR_$(1))/*.h $$(SRCDIR_$(1))/*/*.h)
+SRCS_$(1)      := $$(wildcard $$(SRCDIR_$(1))/*.c $$(SRCDIR_$(1))/*/*.c)
+OBJS_$(1)      := $$(subst $$(SRCDIR),$$(HOSTDIR),$$(SRCS_$(1):.c=.o))
+OBJS_$(1)_TEST := $$(filter-out %/extension.o,$$(OBJS_$(1)))
+
+SRCS_T_$(1)    := $$(wildcard $$(TESTDIR_$(1))/*.c)
+TESTS_$(1).exe := $$(subst $$(TESTDIR),$$(HOSTTEST),$$(SRCS_T_$(1):.c=.exe))
+
+LIB_$(1)       := $$(HOSTDIR)/$(1)$$(SH_SOEXT)
+LIBS           += $$(LIB_$(1))
+
+OBJS_sqlean       += $$(OBJS_$(1))
+SH_LDFLAGS_sqlean += $$(SH_LDFLAGS_$(1))
+ifneq ($(1),regexp)
+TESTS.exe         += $$(TESTS_$(1).exe)
+endif
+
+$(1): $$(LIB_$(1))
+
+$$(LIB_$(1)): $$(HOSTDIR)/sqlean.o $$(HOSTDIR)/sqlite3-$(1).o $$(OBJS_$(1))
+	@echo "   + Linking '$$@'"
+	$$(HIDE)$$(CC) $$(CFLAGS) -o $$@ $$^ $$(SH_LDFLAGS) $$(SH_LDFLAGS_$(1)) 
+
+$$(HOSTDIR_$(1))/%.o: $$(SRCDIR_$(1))/%.c $$(HDRS_$(1))
+	@echo "   + Compiling '$$<'"
+	$$(HIDE)$$(MKDIR) $$(@D)
+	$$(HIDE)$$(CC) $$(CPPFLAGS) $$(CFLAGS) $$(CFLAGS_$(1)) \
+            $(SH_CFLAGS) $$(INCLUDES) $$(INCLUDE_$(1)) -c -o $$@ $$<
+
+test-$(1)-exe: $$(TESTS_$(1).exe)
+
+$$(HOSTTEST_$(1))/%.exe: $$(TESTDIR_$(1))/%.c $$(HDRS_$(1)) $$(OBJS_$(1)_TEST)
+	@echo " + Generating '$$@'"
+	$$(HIDE)$$(MKDIR) $$(@D)
+	$$(HIDE)$$(CC) $$(CPPFLAGS) $$(CFLAGS) $$(INCLUDES) \
+		$$(INCLUDE_$(1)) -o $$@ $$(OBJS_$(1)_TEST) $$< $$(LDLIBS_T_$(1))
+
+endef
+
+#$(foreach ext, $(TARGETS_alone), $(info $(call LIB_template,$(ext))))
+$(foreach ext, $(TARGETS_alone), $(eval $(call LIB_template,$(ext))))
+
+
+ifneq ($(TARGET_sqlean),)
+LIB_sqlean := $(HOSTDIR)/sqlean$(SH_SOEXT)
+LIBS       += $(LIB_sqlean)
+
+$(LIB_sqlean): $(HOSTDIR)/sqlite3-sqlean.o $(HOSTDIR)/sqlean.o $(OBJS_sqlean)
+	@echo "   + Linking '$@'"
+	$(HIDE)$(CC) $(CFLAGS) -o $@ $^ $(SH_LDFLAGS) $(SH_LDFLAGS_sqlean) 
+
+sqlean: $(LIB_sqlean)
+endif
+
+
+# Utility targets
+.PHONY: local-sqlite
+
+$(SQLITE_TRUNKDIR):
+	$(HIDE)$(MKDIR) $(SQLITEDIR)
+	$(HIDE)cd       $(SQLITEDIR) && curl -L --remote-name $(SQLITE_URL)
+	$(HIDE)cd       $(SQLITEDIR) && tar zxf sqlite-trunk.tar.gz
+	$(HIDE)cd       $(SQLITEDIR) && $(RM) sqlite-trunk.tar.gz
+	$(HIDE)cd       $(SQLITE_TRUNKDIR) && ./configure && make sqlite3.h
+
+local-sqlite: $(SQLITE_TRUNKDIR)
+	$(HIDE)$(RM) $(SQLITEDIR)/*.h
+	$(HIDE) \
+	    for file in $(SQLITE_H); do \
+	        $(CP) $(SQLITE_TRUNKDIR)/$$file $(SQLITEDIR); \
+	    done
+	$(HIDE) \
+	    for file in $(SQLITE_TW_H); do \
+	        $(CP) $(SQLITE_TRUNKDIR)/$$file $(SRCDIR)/fileio; \
+	    done
+
+
+.PHONY: test $(TESTS)
+
+TESTS_alone       := $(TARGETS_alone:%=test-%)
+TEST_sqlean       := $(TARGET_sqlean:%=test-%)
+TESTS             := $(TESTS_alone) $(TEST_sqlean)
+
+TESTS_alone.sql   := $(TARGETS_alone:%=$(HOSTTEST)/%.sql)
+TEST_sqlean.sql   := $(TARGET_sqlean:%=$(HOSTTEST)/%.sql)
+TESTS.sql         := $(TESTS_alone.sql) $(TEST_sqlean.sql)
+
+
+test: all $(sort $(TESTS.exe) $(TESTS_alone.sql))  $(TEST_sqlean.sql)
+	$(HIDE)VERBOSE=$(VERBOSE) $(TESTDIR)/.run \
+                $(filter-out all,$^)
+
+$(TESTS): test-%: % test-%-exe $(HOSTTEST)/%.sql 
+	$(HIDE)VERBOSE=$(VERBOSE) $(TESTDIR)/.run \
+		$(HOSTTEST)/$<.sql $(TESTS_$(<).exe)
+
+$(HOSTTEST):
+	$(HIDE)$(MKDIR) $@
+
+$(TEST_sqlean.sql): $(HOSTTEST)/%.sql: $(HOSTDIR)/%$(SH_SOEXT) $(HOSTTEST) Makefile
+	@echo " + Generating '$@'"
+	$(HIDE)echo "-- Generated by Makefile, do not edit" > $@
+	$(HIDE)echo "SELECT load_extension('$(shell $(REALPATH) '$<')');" >> $@
+	$(HIDE)echo ".read '$(TESTDIR)/$(notdir $@)'" >> $@
+	$(HIDE)for f in $(TARGETS_alone); do \
+			echo ".read '$(TESTDIR)/$$f.sql'">> $@; done
+
+$(TESTS_alone.sql): $(HOSTTEST)/%.sql: $(HOSTDIR)/%$(SH_SOEXT) $(HOSTTEST)
+	@echo " + Generating '$@'"
+	$(HIDE)echo "-- Generated by Makefile, do not edit" > $@
+	$(HIDE)echo "SELECT load_extension('$(shell $(REALPATH) '$<')');" >> $@
+	$(HIDE)echo ".read '$(TESTDIR)/$(notdir $@)'" >> $@
+
+
+
+.PHONY: dist distfile distdir
+
+DISTHOST ?= $(HOST)
+DISTNAME := sqlean-$(VERSION)-$(DISTHOST)
+DISTFILE := $(DISTNAME)$(if $(findstring tar,$(TARZIP)),.tar.gz,.zip)
+
+dist: distfile
+	$(HIDE)echo $(DISTDIR)/$(DISTFILE)
+
+distfile: distdir
+	$(HIDE)$(RM) $(DISTDIR)/$(DISTFILE)
+	$(HIDE)cd $(DISTDIR) && $(TARZIP) $(DISTFILE) $(DISTNAME)
+	$(HIDE)$(RMDIR) $(DISTDIR)/$(DISTNAME)
+
+distdir: $(LIBS)
+	$(HIDE)$(RM)    $(DISTDIR)/$(DISTFILE)
+	$(HIDE)$(RMDIR) $(DISTDIR)/$(DISTNAME)
+	$(HIDE)$(MKDIR) $(DISTDIR)/$(DISTNAME)
+	$(HIDE)$(CP) $^ $(DISTDIR)/$(DISTNAME)
+#	$(HIDE)$(STRIP) $(DISTDIR)/$(DISTNAME)/*$(SH_SOEXT)
+
+
+
+.PHONY: clean clean-build clean-dist clean-host clean-sqlite realclean
+
+clean: clean-host clean-dist
+
+clean-build:
+	$(HIDE)$(RMDIR) $(BUILDDIR)
+
+clean-dist:
+	$(HIDE)$(RMDIR) $(DISTDIR)
+
+clean-host:
+	$(HIDE)mv $(HOSTDIR)/_config.h $(BUILDDIR)
+	$(HIDE)$(RMDIR) $(HOSTDIR)/*
+	$(HIDE)mv $(BUILDDIR)/_config.h $(HOSTDIR)
+
+clean-sqlite:
+	$(HIDE)$(RMDIR) $(SQLITE_TRUNKDIR)
+
+realclean: clean clean-build clean-dist clean-sqlite
+	$(HIDE)$(RMDIR) $(TOPDIR)/config.log
+	$(HIDE)$(RMDIR) $(TOPDIR)/Makefile
+	$(HIDE)$(RMDIR) $(DISTDIR)
+

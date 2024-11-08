@@ -1,2 +1,5 @@
+/build
 /config.log
 /jimsh0
+/src/sqlite/sqlite-trunk*
+/Makefile
