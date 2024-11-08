@@ -147,7 +147,7 @@ $$(HOSTDIR_$(1))/%.o: $$(SRCDIR_$(1))/%.c $$(HDRS_$(1))
         -o $$@ \
 	    $$<
 
-$$(EXT_$(1)): $$(HOSTDIR)/sqlite3-$(1).o $$(OBJS_$(1))
+$$(EXT_$(1)): $$(HOSTDIR)/sqlean.o $$(HOSTDIR)/sqlite3-$(1).o $$(OBJS_$(1))
 	$$(HIDE)$$(RM) $$@ $$(LAST_$(1))
 	@echo "   + Linking '$$@'"
 	$$(HIDE)$$(CC) $$(CFLAGS) $$(SH_LDFLAGS) -o $$@ $$^
@@ -162,7 +162,7 @@ $(foreach ext, $(NAMES_alone), $(eval $(call EXT_template,$(ext))))
 
 EXT_sqlean := $(HOSTDIR)/sqlean$(SH_SOEXT)
 
-$(EXT_sqlean): $(HOSTDIR)/sqlite3-sqlean.o $(OBJS_sqlean)
+$(EXT_sqlean): $(HOSTDIR)/*sqlean.o $(OBJS_sqlean)
 	$(HIDE)$(RM) $@ $(LAST_sqlean)
 	@echo "   + Linking '$@'"
 	$(HIDE)$(CC) $(CFLAGS) $(SH_LDFLAGS) -o $@ $^
