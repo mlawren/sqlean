@@ -86,13 +86,7 @@ SQLITE_EXTENSION_INIT3
 ** of a .def file containing the names of the functions being exported.
 */
 #ifndef SQLITE_EXPORT
-#if ((defined(_WIN32) || defined(WIN32) || defined(__CYGWIN__) || defined(__MINGW32__) || \
-      defined(__BORLANDC__)) &&                                                           \
-     (!defined(SQLITE_CORE)))
-#define SQLITE_EXPORT __declspec(dllexport)
-#else
 #define SQLITE_EXPORT SQLITE_EXTERN
-#endif
 #endif
 
 #ifndef SQLITE_PRIVATE
