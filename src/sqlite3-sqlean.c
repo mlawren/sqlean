@@ -61,11 +61,6 @@ SQLITE_EXTENSION_INIT1
 #endif
 
 
-// Returns the current Sqlean version.
-static void sqlean_version(sqlite3_context* context, int argc, sqlite3_value** argv) {
-    sqlite3_result_text(context, SQLEAN_VERSION, -1, SQLITE_STATIC);
-}
-
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
