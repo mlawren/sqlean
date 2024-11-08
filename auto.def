@@ -1,0 +1,131 @@
+use system
+
+array set names {}
+
+foreach ext [lsort [split [glob -tails -directory $autosetup(srcdir)/src sqlite3-*.c] ] ] {
+    set ext [string range $ext 0 [expr {[string length $ext] - 3}]]
+    set ext [string range $ext 8 end]
+    set names($ext) 1
+    append disable_opts "$ext=1 => {Disable the '$ext' extension}\n"
+}
+
+options "
+    abs-dirs       => {Enable absolute directory names in Makefile}
+    local-sqlite   => {Force bundled sqlite headers (make LOCAL_SQLITE=1)}
+    sqlite-incdir:  => {Local sqlite header dir (make SQLITE_INCDIR=\$dir)}
+    compile-debug  => {Compile with debug info (make SQLEAN_DEBUG=1)}
+    $disable_opts
+"
+use cc cc-shared cc-lib
+
+cc-check-functions timespec_get
+
+define SHOBJ_LDFLAGS_ipaddr {}
+if { ![cc-check-includes "arpa/inet.h"] } {
+    if { [cc-check-includes "Ws2tcpip.h"] && [opt-bool ipaddr] } {
+        define SHOBJ_LDFLAGS_ipaddr -lws2_32
+    } else {
+        msg-result "  Extension 'ipaddr' is unsupported here."
+        array unset names ipaddr
+    }
+}
+
+define local_sqlite {}
+if {[opt-bool local-sqlite]} {
+    msg-result "Using local SQLite headers (forced)"
+    define local_sqlite 1
+} else {
+    cc-check-includes sqlite3ext.h
+    if {![get-define HAVE_SQLITE3EXT_H]} {
+        msg-result "  Using local SQLite headers"
+        define local_sqlite 1
+    }
+}
+
+
+set cflag_max_errors {}
+cc-with {-lang c} {
+    if {[cc-check-flags -ferror-limit=5]} {
+        set cflag_max_errors "-ferror-limit=5"
+    } elseif {[cc-check-flags -fmax-errors=5]} {
+        set cflag_max_errors "-fmax-errors=5"
+    }
+}
+define CFLAG_MAX_ERRORS "$cflag_max_errors"
+unset cflag_max_errors
+
+# TODO stop tests when no sqlite3?
+cc-path-progs [get-define CC] 7z cygpath git make realpath sqlite3 tar zip
+
+set targetwin 0
+if {[get-define CYGPATH] ne "false"} {
+    define REALPATH "cygpath --absolute --windows"
+    set targetwin 1
+} elseif {[get-env MSYSTEM ""] ne ""} {
+    set targetwin 1
+}
+
+if {$targetwin} {
+    if {[get-define ZIP] ne "false"} {
+        define TARZIP "zip -r --quiet"
+    # Not ever tested as far as I know.. remove and just require zip?
+    } elseif {[get-define 7Z] ne "false"} {
+        define TARZIP "7z a -bd"
+    }
+} else {
+    define TARZIP "tar czf"
+}
+unset targetwin
+
+
+# MacOS strip does not even accept --version...  Options:
+#   1. Just strip regardless
+#, not sure if this is worth
+# it to be honest.
+#set strip_version [exec strip --version]
+#if {[regexp {GNU} $strip_version]} {
+#    define STRIP "strip  --strip-unneeded --remove-section=.comment --remove-section=.note"
+#} else {
+#    define STRIP strip
+#}
+
+
+define SQLEAN_MSYSTEM [env-is-set MSYSTEM]
+if {[get-define SQLEAN_MSYSTEM]} {
+    msg-result "Enabling MSYS2 ([get-env MSYSTEM {}]) test support"
+}
+
+if {[get-define GIT] ne ""} {
+    set version "v[exec git tag --points-at HEAD]"
+    if {$version eq "v"} {
+        set version [exec git rev-parse --short HEAD]
+    }
+} else {
+    set version "UNKNOWN"
+}
+msg-result "Configured sqlean version $version"
+define SQLEAN_VERSION $version
+unset version
+
+
+foreach ext [array names names ] {
+    if {![opt-bool $ext]} {
+        array unset names $ext
+        define [string toupper SQLEAN_$ext] 0
+    } else {
+        define [string toupper SQLEAN_$ext] 1
+    }
+}
+
+define TARGETS [array names names]
+
+define sqlite_incdir {}
+if {[opt-str sqlite-incdir o]} {
+    msg-result "User-defined SQLITE_INCDIR"
+    define sqlite_incdir $o
+    define local_sqlite 1
+}
+
+make-config-header build/[get-define host]/_config.h \
+    -str SQLEAN_VERSION -auto SQLEAN_*
+make-template Makefile.in
