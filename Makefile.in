@@ -43,7 +43,7 @@ CPPFLAGS        := @CPPFLAGS@
 
 CFLAGS.configure = @CFLAGS@
 CFLAGS.linux-gnu = -z now -z relro -Wall -Wsign-compare -Wno-unknown-pragmas
-CFLAGS.mingw32   = -fPIC -DSQLEAN_OMIT_UUID7 # autosetup misses this
+CFLAGS.mingw32   = -Wall -Wsign-compare -Wno-unknown-pragmas
 CFLAGS.windo     = 
 CFLAGS.macos     = -Wall -Wsign-compare
 CFLAGS.CTEST     = -Wall -Wsign-compare -Wno-unknown-pragmas
