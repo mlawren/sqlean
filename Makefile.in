@@ -180,11 +180,12 @@ TEST_SQL   := $(addprefix test-, \
 
 ifeq ($(BUILD),$(HOST))
 
-test: $(NAMES_TEST)
+test: $(NAMES) $(NAMES_TEST)
 
 $(TEST_SQL): test-%: %
 	@echo " + Running '$(TESTDIR)/$(subst test-,,$@).sql'"
-	$(HIDE)$(TESTDIR)/sqltest $(TESTDIR)/$(subst test-,,$@).sql
+	$(HIDE)VERBOSE=$(VERBOSE) $(TESTDIR)/sqltest \
+	    $(TESTDIR)/$(subst test-,,$@).sql
 
 else
 
