@@ -10,25 +10,41 @@ if [ $# -lt 1 ]; then
     exit 1
 fi
 
-fail=0
+errors=0
 for test in "$@"; do
-    localfail=0
+    good=0
+    fail=0
+    warn=0
+    total=0
     while read -r line; do
-
+        ((total++))
+        if [ "$VERBOSE" == 1 ]; then
+            echo $line
+        fi
         case "$line" in
+            NULL)
+                ;;
+            [0-9]_[0-9][0-9]*1)
+                ((good++))
+                ;;
+            [0-9]_[0-9][0-9]*)
+                ((fail++))
+                ;;
             [0-9][0-9]*1)
-                # echo $test: $line
+                ((good++))
                 ;;
             [0-9][0-9]*)
-                ((localfail++))
-                echo $test: $line 1>&2
+                ((fail++))
                 ;;
-            *) # ignore
+            *)
+                ((warn++))
+                if [ "$VERBOSE" != 1 ]; then
+                    echo $line
+                fi
                 ;;
         esac
     done < <(
-    HOME=. sqlite3 <<-EOF
-		.bail on
+    HOME=. sqlite3 2>&1 <<-EOF
 		.headers off
 		.mode tabs
 		.read $test
@@ -36,19 +52,18 @@ for test in "$@"; do
 EOF
     )
 
-    ((fail += $localfail))
+    ((errors += $?))
+    ((errors += $fail))
+    ((errors += $warn))
 
-    if [ -z "$MAKELEVEL" ]; then
-        if [ $localfail -gt 0 ]; then
-            echo $test: failures: $localfail
-        else
-            echo $test: ok
-        fi
+    if [ $fail -gt 0 -o $warn -gt 0 ]; then
+        printf "%s: fail: %d, warn: %d, ok: %d, total: %d\n" \
+            $test $fail $warn $good $total 1>&2
+    else
+        echo $test: ok: $good
     fi
 done
 
-if [ $fail -gt 0 ]; then
-    false
-else
-    true
+if [ $errors -gt 0 ]; then
+    exit 1
 fi
