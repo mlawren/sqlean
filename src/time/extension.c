@@ -9,10 +9,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "time/timex.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 
-#include "time/timex.h"
 
 // result_blob converts a Time value to a blob and sets it as the result.
 static void result_blob(sqlite3_context* context, Time t) {
