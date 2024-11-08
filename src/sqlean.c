@@ -68,3 +68,10 @@ void sqlean_version(sqlite3_context* context, int argc, sqlite3_value** argv) {
     }
 }
 
+#if !HAVE_ARPA_INET_H || !HAVE_TIMESPEC_GET
+void sqlean_unsupported(
+    sqlite3_context* context, int argc, sqlite3_value** argv) {
+
+    sqlite3_result_error(context, "use of unsupported sqlean function",-1);
+}
+#endif
