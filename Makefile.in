@@ -63,7 +63,7 @@ INCLUDES        += $(if $(LOCAL_SQLITE),-I$(SQLITE_INCDIR),)
 NAMES           := @SQLEAN_NAMES@
 NAMES_alone     := $(filter-out sqlean,$(NAMES))
 NAME_sqlean     := $(filter sqlean,$(NAMES))
-NAMES_TEST      := $(patsubst %,test-%, $(NAMES_alone) $(NAME_sqlean))
+NAMES_TEST      := $(sort $(patsubst %,test-%, $(NAMES_alone)) $(NAME_sqlean))
 
 SQLITE_URL      = https://sqlite.org/src/tarball/trunk/sqlite-trunk.tar.gz
 SQLITE_TRUNKDIR = $(SQLITEDIR)/sqlite-trunk
