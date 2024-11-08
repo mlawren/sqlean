@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "sqlean.h"
 #include "time/timex.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
@@ -723,6 +724,8 @@ int time_init(sqlite3* db) {
     // constructors
 #ifdef HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "time_now", 0, flags_nd, 0, fn_now, 0, 0);
+#else
+    sqlite3_create_function(db, "time_now", 0, flags, 0, sqlean_unimplemented, 0, 0);
 #endif
     sqlite3_create_function(db, "time_date", 3, flags, 0, fn_date, 0, 0);
     sqlite3_create_function(db, "time_date", 6, flags, 0, fn_date, 0, 0);
@@ -766,6 +769,9 @@ int time_init(sqlite3* db) {
 #ifdef HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "time_since", 1, flags_nd, 0, fn_since, 0, 0);
     sqlite3_create_function(db, "time_until", 1, flags_nd, 0, fn_until, 0, 0);
+#else
+    sqlite3_create_function(db, "time_since", 1, flags, 0, sqlean_unimplemented, 0, 0);
+    sqlite3_create_function(db, "time_until", 1, flags, 0, sqlean_unimplemented, 0, 0);
 #endif
     sqlite3_create_function(db, "time_add_date", 2, flags, 0, fn_add_date, 0, 0);
     sqlite3_create_function(db, "time_add_date", 3, flags, 0, fn_add_date, 0, 0);
@@ -803,6 +809,8 @@ int time_init(sqlite3* db) {
     sqlite3_create_function(db, "make_timestamp", 6, flags, 0, fn_date, 0, 0);
 #ifdef HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "now", 0, flags_nd, 0, fn_now, 0, 0);
+#else
+    sqlite3_create_function(db, "now", 0, flags, 0, sqlean_unimplemented, 0, 0);
 #endif
     sqlite3_create_function(db, "to_timestamp", 1, flags, 0, fn_unix, 0, 0);
 

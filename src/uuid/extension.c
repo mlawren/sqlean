@@ -267,6 +267,8 @@ int uuid_init(sqlite3* db) {
     sqlite3_create_function(db, "gen_random_uuid", 0, flags, 0, uuid_v4_generate, 0, 0);
 #ifdef HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "uuid7", 0, flags, 0, uuid_v7_generate, 0, 0);
+#else
+    sqlite3_create_function(db, "uuid7", 0, flags, 0, sqlean_unimplemented, 0, 0);
 #endif
     sqlite3_create_function(db, "uuid7_timestamp_ms", 1, det_flags, 0, uuid_v7_extract_timestamp_ms,
                             0, 0);

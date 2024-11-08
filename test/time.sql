@@ -141,8 +141,10 @@ select '42_10', time_sub(time_unix(1321631795, 5), time_unix(1321631795, 0)) = 5
 select '42_11', time_sub(time_unix(1321631795, 5), time_unix(1321631795, 0)) = 5;
 
 -- time_since, time_until
-select '43_01', time_since(time_add(time_now(), -3*dur_h()-dur_s())) / dur_h() = 3;
-select '43_02', time_until(time_add(time_now(), 3*dur_h()+dur_s())) / dur_h() = 3;
+select '43_01', time_since(time_add(time_now(), -3*dur_h()-dur_s())) / dur_h() = 3
+    where sqlean_version('HAVE_TIMESPEC_GET');
+select '43_02', time_until(time_add(time_now(), 3*dur_h()+dur_s())) / dur_h() = 3
+    where sqlean_version('HAVE_TIMESPEC_GET');
 
 -- time_add_date: years
 select '44_01', time_add_date(time_date(2011, 11, 18), 0) = time_date(2011, 11, 18);
