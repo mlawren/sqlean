@@ -172,15 +172,15 @@ sqlean: $(LASTDIR) $(EXT_sqlean)
 
 .PHONY: test test_sql $(NAMES_TEST)
 
-TEST_SQL   := $(addprefix test-, \
+TEST_SQL   := $(sort $(addprefix test-, \
               $(basename \
               $(notdir \
-              $(wildcard $(TESTDIR)/*.sql))))
+              $(wildcard $(TESTDIR)/*.sql)))))
 
 
 ifeq ($(BUILD),$(HOST))
 
-test: $(NAMES) $(NAMES_TEST)
+test: all $(NAMES_TEST)
 
 $(TEST_SQL): test-%: %
 	@echo " + Running '$(TESTDIR)/$(subst test-,,$@).sql'"
