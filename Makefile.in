@@ -48,7 +48,7 @@ CFLAGS.windo     =
 CFLAGS.macos     = -Wall -Wsign-compare
 CFLAGS.CTEST     = -Wall -Wsign-compare -Wno-unknown-pragmas
 
-CFLAGS          := $(CFLAGS.configure) $(CFLAGS.$(HOST_OS))
+CFLAGS          := $(CFLAGS.configure) $(CFLAGS.$(HOST_OS)) $(CFLAGS.add)
 
 SH_CFLAGS       := @SHOBJ_CFLAGS@
 SH_LDFLAGS      := @SHOBJ_LDFLAGS@
