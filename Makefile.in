@@ -21,7 +21,7 @@ HOST_VENDOR  := @host_vendor@
 HOST_OS      := @host_os@
 
 VERSION       = '"$(or $(shell git tag --points-at HEAD),main)"'
-TAG          ?= $(if @SQLEAN_TAG@,--@SQLEAN_TAG,)
+TAG          ?= @SQLEAN_TAG@
 
 # Where we are building from and to
 ifeq (@abs_dirs@,1)

@@ -55,7 +55,7 @@ foreach ext [array names names ] {
 define SQLEAN_NAMES [array names names]
 
 if {[opt-str tag o]} {
-    define SQLEAN_TAG $o
+    define SQLEAN_TAG -$o
 } else {
     define SQLEAN_TAG {}
 }
