@@ -12,4 +12,11 @@ void sqlean_version(
     int argc,
     sqlite3_value** argv);
 
+#if !HAVE_ARPA_INET_H || !HAVE_TIMESPEC_GET
+void sqlean_unsupported(
+    sqlite3_context* context,
+    int argc,
+    sqlite3_value** argv);
+#endif
+
 #endif /* SQLEAN_H */
