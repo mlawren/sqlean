@@ -1,0 +1,56 @@
+name: build-linux
+
+on:
+    push:
+        branches: [build-on/linux]
+    workflow_call:
+
+jobs:
+    Linux:
+        name: ${{ matrix.dist }} on ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os:
+                    - ubuntu-24.04
+                dist:
+                    - Linux-Arm64
+                    - Linux-IA32
+                    - Linux-x64
+                    - Linux-x64-Musl
+                include:
+                    - dist: Linux-Arm64
+                      deps: gcc-aarch64-linux-gnu
+                      preamble: ''
+                      host: aarch64-linux-gnu
+                    - dist: Linux-IA32
+                      deps: util-linux gcc-multilib
+                      preamble: CC=cc CFLAGS=-m32 setarch linux32
+                      host: i686-linux-gnu
+                    - dist: Linux-x64
+                      testable: true
+                      preamble: ''
+                    - dist: Linux-x64-Musl
+                      deps: musl-tools
+                      host: x86_64-linux-musl
+                      preamble: ''
+        steps:
+            - id: deps
+              name: Dependencies
+              run: sudo apt-get install -y ${{matrix.deps}}
+
+            - id: checkout
+              name: Checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-tags: 1 # fails, see GH:actions/checkout/issues/1471
+
+            - id: build-release
+              name: Build-Release
+              uses: ./.github/actions/build-release
+              with:
+                  dist: ${{ matrix.dist }}
+                  host: ${{ matrix.host }}
+                  preamble: ${{ matrix.preamble }}
+                  shell: bash
+                  testable: ${{ matrix.testable }}
