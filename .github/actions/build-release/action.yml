@@ -1,0 +1,65 @@
+name: Build-Release
+description: Run ./configure; make all [test] [dist]
+inputs:
+    shell:
+        required: true
+        description: Shell to run steps with
+        type: string
+    dist:
+        required: true
+        description: String passed to "make dist DISTNAME=$dist"
+        type: string
+    preamble:
+        type: string
+        description: Prefix for each command
+    host:
+        type: string
+        description: String passed to "./configure --host=$host"
+    testable:
+        type: boolean
+        description: Whether to run "make test" after compiling
+    repo_token:
+        type: string
+        description: Permission token for uploading release
+runs:
+    using: composite
+    steps:
+      - id: tag
+        name: Tag
+        shell: ${{inputs.shell}}
+        run: |
+            git fetch --quiet --tags --depth 1 origin
+            echo "name=$(git tag --points-at HEAD)" | tee "$GITHUB_OUTPUT"
+
+      - id: configure
+        name: Configure
+        shell: ${{inputs.shell}}
+        run: ${{inputs.preamble}} ./configure --host=${{inputs.host}}
+
+      - id: make
+        name: Make
+        shell: ${{inputs.shell}}
+        run: make all
+
+      - id: test
+        name: Test
+        if: inputs.testable
+        shell: ${{inputs.shell}}
+        run: make test
+
+      - id: dist
+        name: Dist
+        if: steps.tag.outputs.name != ''
+        shell: ${{inputs.shell}}
+        run: |
+            echo -n "name="                     >> "$GITHUB_OUTPUT"
+            make dist DISTHOST=${{inputs.dist}} >> "$GITHUB_OUTPUT"
+
+      - id: release
+        name: Release
+        if: steps.tag.outputs.name != ''
+        uses: svenstaro/upload-release-action@v2
+        with:
+            repo_token: ${{ github.token }}
+            file: ${{ steps.dist.outputs.name }}
+            tag: ${{ steps.tag.outputs.name }}

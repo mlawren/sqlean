@@ -1,0 +1,48 @@
+name: build-macos
+
+on:
+    push:
+        branches: [build-on/macos]
+    workflow_call:
+
+jobs:
+    MacOS:
+        name: ${{ matrix.dist }} on ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os:
+                    - macos-13
+                    - macos-14
+                testable:
+                    - true
+                include:
+                    - os: macos-13
+                      dist: MacOS-x64
+                    - os: macos-14
+                      dist: MacOS-Arm64
+
+        steps:
+            - id: deps
+              name: Dependencies
+              run: |
+                  brew install make
+                  echo "$(brew --prefix gnu-tar)/libexec/gnubin" | tee -a "$GITHUB_PATH"
+                  echo "$(brew --prefix make)/libexec/gnubin" | tee -a "$GITHUB_PATH"
+                  echo "$(brew --prefix sqlite)/bin" | tee -a "$GITHUB_PATH"
+
+            - id: checkout
+              name: Checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-tags: 1 # fails, see GH:actions/checkout/issues/1471
+
+            - id: build-release
+              name: Build-Release
+              uses: ./.github/actions/build-release
+              with:
+                  dist: ${{ matrix.dist }}
+                  host: ${{ matrix.host }}
+                  preamble: ${{ matrix.preamble }}
+                  shell: bash
+                  testable: ${{ matrix.testable }}

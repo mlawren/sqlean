@@ -1,0 +1,63 @@
+name: build-windows
+on:
+    push:
+        branches: [build-on/windows]
+    workflow_call:
+defaults:
+    run:
+        shell: C:\shells\msys2bash.cmd {0}
+jobs:
+    Windows:
+        name: ${{ matrix.dist }} on ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                os:
+                    - windows-2022
+                dist:
+                    - Windows-x64
+                    - Windows-IA32
+                include:
+                    - dist: Windows-x64
+                      deps: mingw-w64-ucrt-x86_64-binutils
+                            mingw-w64-ucrt-x86_64-gcc
+                            mingw-w64-ucrt-x86_64-sqlite3
+                            git make zip
+                      msystem: UCRT64
+                      shell: C:\shells\msys2bash.cmd {0}
+                      testable: true
+                    - dist: Windows-IA32
+                      deps: mingw-w64-i686-binutils
+                            mingw-w64-i686-gcc
+                            mingw-w64-i686-sqlite3
+                            git make zip
+                      host: i686-w64-mingw32
+                      msystem: MINGW32
+                      shell: C:\shells\msys2bash.cmd {0}
+                      testable: true
+        env:
+            MSYSTEM: ${{matrix.msystem}}
+        steps:
+            - id: deps
+              name: Dependencies
+              run: pacman -S
+                     --noconfirm
+                     --needed
+                     --noprogressbar
+                     ${{matrix.deps}}
+
+            - id: checkout
+              name: Checkout
+              uses: actions/checkout@v4
+              with:
+                fetch-tags: 1 # fails, see GH:actions/checkout/issues/1471
+
+            - id: build-release
+              name: Build-Release
+              uses: ./.github/actions/build-release
+              with:
+                  dist: ${{ matrix.dist }}
+                  host: ${{ matrix.host }}
+                  preamble: ${{ matrix.preamble }}
+                  shell: ${{ matrix.shell }}
+                  testable: ${{ matrix.testable }}
