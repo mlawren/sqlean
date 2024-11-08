@@ -1,4 +1,19 @@
-use system cc cc-shared
+use system
+
+set version [exec git tag --points-at HEAD]
+if {$version eq ""} {
+    set branch [exec git symbolic-ref -q --short HEAD]
+    set commit [exec git rev-parse --short HEAD]
+    msg-result "Configuring sqlean from branch $branch ($commit)"
+    set version $branch-$commit
+    unset branch commit
+} else {
+    msg-result "Configuring sqlean $version"
+}
+define SQLEAN_VERSION $version
+unset version
+
+
 
 array set names {}
 
@@ -18,6 +33,7 @@ options "
     $disable_opts
     verbose=0      => {Print recipie commands (make VERBOSE=1)}
 "
+use cc cc-shared
 
 cc-check-functions timespec_get
 if { ![cc-check-includes "arpa/inet.h"] } {
@@ -63,12 +79,6 @@ if {[opt-str sqlite-incdir o]} {
     define sqlite_incdir $o
     define local_sqlite 1
 }
-
-set version [exec git tag --points-at HEAD]
-if {$version eq ""} {
-    set version main
-}
-define SQLEAN_VERSION $version
 
 make-config-header config.h -auto SQLEAN_*
 make-template Makefile.in
