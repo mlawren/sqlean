@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+# Script to run test/*sql files. Pass error lines to stderr, and exit
+# with a non-zero value in that case.
+
+set -e -o pipefail
+me=$(basename $0)
+tmp_in=$(mktemp)
+tmp_out=$(mktemp)
+trap "rm $tmp_out" EXIT
+
+if [ $# -lt 1 ]; then
+    echo "usage: $me TEST.sql [...]" 1>&2
+    exit 1
+fi
+
+fail=0
+for test in "$@"; do
+    localfail=0
+    localok=0
+
+    echo -n "$test: "
+
+    if [[ $test =~ \.sql$ ]]; then
+        echo ".headers off"  > $tmp_in
+        echo ".mode tabs"   >> $tmp_in
+        echo ".read $test"  >> $tmp_in
+        echo ".quit"        >> $tmp_in
+        HOME=. sqlite3 < $tmp_in | tr -d '\r' > $tmp_out 
+    else
+        $test | tr -d '\r' > $tmp_out 
+    fi
+
+    while read -r line; do
+        [ "$VERBOSE" == 1 ] && echo $line
+        case "$line" in
+            [0-9][_0-9]*1)
+                ((localok++)) || true
+                ;;
+            *OK)
+                ((localok++)) || true
+                ;;
+            [0-9][_0-9]*)
+                if [ $localfail -eq 0 ]; then
+                    echo
+                fi
+                ((localfail++)) || true
+                echo $test: $line 1>&2
+                ;;
+            NULL*) # ignore
+                ;;
+            *)
+                [ "$VERBOSE" != 1 ] && echo $line
+                ;;
+        esac
+    done < $tmp_out
+
+    if [ $localfail -gt 0 ]; then
+        echo $test: failures: $localfail
+    elif [ $localok -eq 0 ]; then
+        echo no test run! 1>&2
+        ((localfail++)) || true
+    else
+        echo ok: $localok
+    fi
+
+    ((fail += $localfail)) || true
+
+done
+
+exit $fail
