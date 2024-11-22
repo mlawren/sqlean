@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <time.h>
 
+#include "config.h"
+
 // Month is a month of the year.
 enum Month {
     January = 1,
@@ -158,16 +160,16 @@ struct tm time_to_tm(Time t, int offset_sec);
 // Comparison.
 
 // time_after reports whether the time instant t is after u.
-bool time_after(Time t, Time u);
+int time_after(Time t, Time u);
 
 // time_before reports whether the time instant t is before u.
-bool time_before(Time t, Time u);
+int time_before(Time t, Time u);
 
 // time_compare compares the time instant t with u.
 int time_compare(Time t, Time u);
 
 // time_equal reports whether t and u represent the same time instant.
-bool time_equal(Time t, Time u);
+int time_equal(Time t, Time u);
 
 // time_is_zero reports whether t represents the zero time instant,
 // January 1, year 1, 00:00:00 UTC.
@@ -184,8 +186,10 @@ Duration time_sub(Time t, Time u);
 // time_since returns the time elapsed since t.
 Duration time_since(Time t);
 
+#if HAVE_TIMESPEC_GET
 // time_until returns the duration until t.
 Duration time_until(Time t);
+#endif
 
 // time_add_date returns the time corresponding to adding the
 // given number of years, months, and days to t.
