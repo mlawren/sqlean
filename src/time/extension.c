@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
+#include "sqlean.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 
@@ -22,11 +24,13 @@ static void result_blob(sqlite3_context* context, Time t) {
 }
 
 // time_now()
+#if HAVE_TIMESPEC_GET
 static void fn_now(sqlite3_context* context, int argc, sqlite3_value** argv) {
     assert(argc == 0);
     Time t = time_now();
     result_blob(context, t);
 }
+#endif
 
 // time_date(year, month, day[, hour, min, sec[, nsec[, offset_sec]]])
 static void fn_date(sqlite3_context* context, int argc, sqlite3_value** argv) {
@@ -414,6 +418,7 @@ static void fn_sub(sqlite3_context* context, int argc, sqlite3_value** argv) {
 }
 
 // time_since(t)
+#if HAVE_TIMESPEC_GET
 static void fn_since(sqlite3_context* context, int argc, sqlite3_value** argv) {
     assert(argc == 1);
     if (sqlite3_value_type(argv[0]) != SQLITE_BLOB) {
@@ -446,6 +451,7 @@ static void fn_until(sqlite3_context* context, int argc, sqlite3_value** argv) {
     Duration d = time_until(t);
     sqlite3_result_int64(context, d);
 }
+#endif
 
 // time_add_date(t, years[, months[, days]])
 static void fn_add_date(sqlite3_context* context, int argc, sqlite3_value** argv) {
@@ -706,16 +712,22 @@ static void fn_parse(sqlite3_context* context, int argc, sqlite3_value** argv) {
 // dur_h(), dur_m(), dur_s(), dur_ms(), dur_us(), dur_ns()
 static void fn_dur_const(sqlite3_context* context, int argc, sqlite3_value** argv) {
     assert(argc == 0);
-    int64_t d = (intptr_t)sqlite3_user_data(context);
-    sqlite3_result_int64(context, d);
+    Duration d = *(Duration *)sqlite3_user_data(context);
+    sqlite3_result_int64(context, (int64_t)d);
 }
 
 int time_init(sqlite3* db) {
     static const int flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
+#if HAVE_TIMESPEC_GET
     static const int flags_nd = SQLITE_UTF8 | SQLITE_INNOCUOUS;
+#endif
 
     // constructors
+#if HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "time_now", 0, flags_nd, 0, fn_now, 0, 0);
+#else
+    sqlite3_create_function(db, "time_now", 0, flags, 0, sqlean_unsupported, 0, 0);
+#endif
     sqlite3_create_function(db, "time_date", 3, flags, 0, fn_date, 0, 0);
     sqlite3_create_function(db, "time_date", 6, flags, 0, fn_date, 0, 0);
     sqlite3_create_function(db, "time_date", 7, flags, 0, fn_date, 0, 0);
@@ -755,8 +767,13 @@ int time_init(sqlite3* db) {
     // arithmetic
     sqlite3_create_function(db, "time_add", 2, flags, 0, fn_add, 0, 0);
     sqlite3_create_function(db, "time_sub", 2, flags, 0, fn_sub, 0, 0);
+#if HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "time_since", 1, flags_nd, 0, fn_since, 0, 0);
     sqlite3_create_function(db, "time_until", 1, flags_nd, 0, fn_until, 0, 0);
+#else
+    sqlite3_create_function(db, "time_since", 1, flags, 0, sqlean_unsupported, 0, 0);
+    sqlite3_create_function(db, "time_until", 1, flags, 0, sqlean_unsupported, 0, 0);
+#endif
     sqlite3_create_function(db, "time_add_date", 2, flags, 0, fn_add_date, 0, 0);
     sqlite3_create_function(db, "time_add_date", 3, flags, 0, fn_add_date, 0, 0);
     sqlite3_create_function(db, "time_add_date", 4, flags, 0, fn_add_date, 0, 0);
@@ -777,12 +794,12 @@ int time_init(sqlite3* db) {
     sqlite3_create_function(db, "time_parse", 1, flags, 0, fn_parse, 0, 0);
 
     // duration constants
-    sqlite3_create_function(db, "dur_h", 0, flags, (void*)Hour, fn_dur_const, 0, 0);
-    sqlite3_create_function(db, "dur_m", 0, flags, (void*)Minute, fn_dur_const, 0, 0);
-    sqlite3_create_function(db, "dur_s", 0, flags, (void*)Second, fn_dur_const, 0, 0);
-    sqlite3_create_function(db, "dur_ms", 0, flags, (void*)Millisecond, fn_dur_const, 0, 0);
-    sqlite3_create_function(db, "dur_us", 0, flags, (void*)Microsecond, fn_dur_const, 0, 0);
-    sqlite3_create_function(db, "dur_ns", 0, flags, (void*)Nanosecond, fn_dur_const, 0, 0);
+    sqlite3_create_function(db, "dur_h", 0, flags, (void *)&Hour, fn_dur_const, 0, 0);
+    sqlite3_create_function(db, "dur_m", 0, flags, (void *)&Minute, fn_dur_const, 0, 0);
+    sqlite3_create_function(db, "dur_s", 0, flags, (void *)&Second, fn_dur_const, 0, 0);
+    sqlite3_create_function(db, "dur_ms", 0, flags, (void *)&Millisecond, fn_dur_const, 0, 0);
+    sqlite3_create_function(db, "dur_us", 0, flags, (void *)&Microsecond, fn_dur_const, 0, 0);
+    sqlite3_create_function(db, "dur_ns", 0, flags, (void *)&Nanosecond, fn_dur_const, 0, 0);
 
     // postgres compatibility layer
     sqlite3_create_function(db, "age", 2, flags, 0, fn_sub, 0, 0);
@@ -791,7 +808,11 @@ int time_init(sqlite3* db) {
     sqlite3_create_function(db, "date_trunc", 2, flags, 0, date_trunc, 0, 0);
     sqlite3_create_function(db, "make_date", 3, flags, 0, fn_date, 0, 0);
     sqlite3_create_function(db, "make_timestamp", 6, flags, 0, fn_date, 0, 0);
+#if HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "now", 0, flags_nd, 0, fn_now, 0, 0);
+#else
+    sqlite3_create_function(db, "now", 0, flags, 0, sqlean_unsupported, 0, 0);
+#endif
     sqlite3_create_function(db, "to_timestamp", 1, flags, 0, fn_unix, 0, 0);
 
     return SQLITE_OK;
