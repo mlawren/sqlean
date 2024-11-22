@@ -250,12 +250,14 @@ static Duration time_div(Time t, Duration d) {
 
 #pragma region Constructors
 
+#if HAVE_TIMESPEC_GET
 // time_now returns the current time in UTC.
 Time time_now(void) {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
     return unix_time(ts.tv_sec, ts.tv_nsec);
 }
+#endif
 
 // time_date returns the Time corresponding to
 // yyyy-mm-dd hh:mm:ss + nsec nanoseconds
@@ -594,6 +596,7 @@ Duration time_sub(Time t, Time u) {
 
 // time_since returns the time elapsed since t.
 // It is shorthand for time_sub(time_now(), t).
+#if HAVE_TIMESPEC_GET
 Duration time_since(Time t) {
     return time_sub(time_now(), t);
 }
@@ -603,6 +606,7 @@ Duration time_since(Time t) {
 Duration time_until(Time t) {
     return time_sub(t, time_now());
 }
+#endif
 
 // time_add_date returns the time corresponding to adding the
 // given number of years, months, and days to t.

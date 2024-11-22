@@ -562,6 +562,7 @@ static void test_add(void) {
     printf("OK\n");
 }
 
+#if HAVE_TIMESPEC_GET
 static void test_add_to_exact_second(void) {
     // Add an amount to the current time to round it up to the next exact second.
     // This test checks that the nsec field still lies within the range [0, 999999999].
@@ -572,6 +573,7 @@ static void test_add_to_exact_second(void) {
     assert(time_get_second(t2) == sec && t2.nsec == 0);
     printf("OK\n");
 }
+#endif
 
 typedef struct {
     Time t;
@@ -909,7 +911,9 @@ int main(void) {
 
     // Arithmetic.
     test_add();
+#if HAVE_TIMESPEC_GET
     test_add_to_exact_second();
+#endif
     test_sub();
     test_add_date();
 
