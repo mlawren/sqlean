@@ -250,12 +250,14 @@ static Duration time_div(Time t, Duration d) {
 
 #pragma region Constructors
 
+#if HAVE_TIMESPEC_GET
 // time_now returns the current time in UTC.
 Time time_now(void) {
     struct timespec ts;
     timespec_get(&ts, TIME_UTC);
     return unix_time(ts.tv_sec, ts.tv_nsec);
 }
+#endif
 
 // time_date returns the Time corresponding to
 // yyyy-mm-dd hh:mm:ss + nsec nanoseconds
@@ -528,12 +530,12 @@ struct tm time_to_tm(Time t, int offset_sec) {
 #pragma region Comparison
 
 // time_after reports whether the time instant t is after u.
-bool time_after(Time t, Time u) {
+int time_after(Time t, Time u) {
     return t.sec > u.sec || (t.sec == u.sec && t.nsec > u.nsec);
 }
 
 // time_before reports whether the time instant t is before u.
-bool time_before(Time t, Time u) {
+int time_before(Time t, Time u) {
     return t.sec < u.sec || (t.sec == u.sec && t.nsec < u.nsec);
 }
 
@@ -550,7 +552,7 @@ int time_compare(Time t, Time u) {
 }
 
 // time_equal reports whether t and u represent the same time instant.
-bool time_equal(Time t, Time u) {
+int time_equal(Time t, Time u) {
     return t.sec == u.sec && t.nsec == u.nsec;
 }
 
@@ -594,6 +596,7 @@ Duration time_sub(Time t, Time u) {
 
 // time_since returns the time elapsed since t.
 // It is shorthand for time_sub(time_now(), t).
+#if HAVE_TIMESPEC_GET
 Duration time_since(Time t) {
     return time_sub(time_now(), t);
 }
@@ -603,6 +606,7 @@ Duration time_since(Time t) {
 Duration time_until(Time t) {
     return time_sub(t, time_now());
 }
+#endif
 
 // time_add_date returns the time corresponding to adding the
 // given number of years, months, and days to t.
