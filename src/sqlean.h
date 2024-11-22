@@ -4,9 +4,7 @@
 #ifndef SQLEAN_H
 #define SQLEAN_H
 
-#ifndef SQLEAN_VERSION
-#define SQLEAN_VERSION "main"
-#endif
+#include "config.h"
 #include "sqlite3ext.h"
 
 void sqlean_version(
