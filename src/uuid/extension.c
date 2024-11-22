@@ -67,6 +67,8 @@
 #include <string.h>
 #include <time.h>
 
+#include "config.h"
+#include "sqlean.h"
 #include "sqlite3ext.h"
 SQLITE_EXTENSION_INIT3
 
@@ -181,7 +183,7 @@ static void uuid_v4_generate(sqlite3_context* context, int argc, sqlite3_value**
 }
 
 // Time functions are not available of some older systems like 32-bit Windows.
-#ifndef SQLEAN_OMIT_UUID7
+#if HAVE_TIMESPEC_GET
 /*
  * uuid_v7_generate generates a version 7 UUID as a string
  */
@@ -213,6 +215,7 @@ static void uuid_v7_generate(sqlite3_context* context, int argc, sqlite3_value**
     sqlite3_uuid_blob_to_str(aBlob, zStr);
     sqlite3_result_text(context, (char*)zStr, 36, SQLITE_TRANSIENT);
 }
+#endif
 
 /*
  * uuid_v7_extract_timestamp_ms extract unix timestamp in miliseconds
@@ -235,8 +238,6 @@ static void uuid_v7_extract_timestamp_ms(sqlite3_context* context, int argc, sql
 
     sqlite3_result_int64(context, timestampMs);
 }
-
-#endif
 
 /*
  * uuid_str converts a UUID X into a well-formed UUID string.
@@ -273,12 +274,13 @@ int uuid_init(sqlite3* db) {
     static const int det_flags = SQLITE_UTF8 | SQLITE_INNOCUOUS | SQLITE_DETERMINISTIC;
     sqlite3_create_function(db, "uuid4", 0, flags, 0, uuid_v4_generate, 0, 0);
     sqlite3_create_function(db, "gen_random_uuid", 0, flags, 0, uuid_v4_generate, 0, 0);
-#ifndef SQLEAN_OMIT_UUID7
-    sqlite3_create_function(db, "uuid7", 0, flags, 0, uuid_v7_generate, 0, 0);
+#if HAVE_TIMESPEC_GET
     sqlite3_create_function(db, "uuid7", 1, flags, 0, uuid_v7_generate, 0, 0);
+#else
+    sqlite3_create_function(db, "uuid7", 1, flags, 0, sqlean_unsupported, 0, 0);
+#endif
     sqlite3_create_function(db, "uuid7_timestamp_ms", 1, det_flags, 0, uuid_v7_extract_timestamp_ms,
                             0, 0);
-#endif
     sqlite3_create_function(db, "uuid_str", 1, det_flags, 0, uuid_str, 0, 0);
     sqlite3_create_function(db, "uuid_blob", 1, det_flags, 0, uuid_blob, 0, 0);
     return SQLITE_OK;
