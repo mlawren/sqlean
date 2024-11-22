@@ -3,7 +3,13 @@
 
 // IP address manipulation in SQLite.
 
+#include "config.h"
+#if HAVE_ARPA_INET_H
 #include <arpa/inet.h>
+#elif HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
+#endif
+
 #include <assert.h>
 #include <errno.h>
 #include <inttypes.h>
