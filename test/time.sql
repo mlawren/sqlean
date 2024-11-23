@@ -78,12 +78,14 @@ select '25_03', time_to_micro(time_unix(1321631795, 666777888)) = 13216317956667
 select '25_04', time_to_nano(time_unix(1321631795, 666777888)) = 1321631795666777888;
 
 -- time_after
+select 'time after '||time_after(time_date(2011, 11, 19), time_date(2011, 11, 18));
 select '31_01', time_after(time_date(2011, 11, 19), time_date(2011, 11, 18)) = 1;
 select '31_02', time_after(time_date(2011, 11, 18, 15, 56, 35), time_date(2011, 11, 18)) = 1;
 select '31_03', time_after(time_date(2011, 11, 18, 15, 56, 35, 666777888), time_date(2011, 11, 18, 15, 56, 35)) = 1;
 
 -- time_before
 select '32_01', time_before(time_date(2011, 11, 18), time_date(2011, 11, 19)) = 1;
+select 'time before ' || time_before(time_date(2011, 11, 18), time_date(2011, 11, 18, 15, 56, 35));
 select '32_02', time_before(time_date(2011, 11, 18), time_date(2011, 11, 18, 15, 56, 35)) = 1;
 select '32_03', time_before(time_date(2011, 11, 18, 15, 56, 35), time_date(2011, 11, 18, 15, 56, 35, 666777888)) = 1;
 
