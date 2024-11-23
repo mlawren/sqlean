@@ -116,7 +116,7 @@ typedef struct {
 } ToMinuteTest;
 
 static ToMinuteTest to_minute_tests[] = {
-    {-60000000000, -1}, {-1, (double)-1 / 60e9}, {1, (double)1 / 60e9}, {60000000000, 1}, {3000, 5e-8},
+    {-60000000000, -1}, {-1, (double)-1 / 60e9}, {1, (double)1 / 60e9}, {60000000000, 1}, {3000, (double)5e-8},
 };
 
 static void test_to_minutes(void) {
@@ -136,7 +136,7 @@ typedef struct {
 } ToHourTest;
 
 static ToHourTest to_hour_tests[] = {
-    {-3600000000000, -1}, {-1, (double)-1 / 3600e9}, {1, (double)1 / 3600e9}, {3600000000000, 1}, {36, 1e-11},
+    {-3600000000000, -1}, {-1, (double)-1 / 3600e9}, {1, (double)1 / 3600e9}, {3600000000000, 1}, {36, (double)1e-11},
 };
 
 static void test_to_hours(void) {
