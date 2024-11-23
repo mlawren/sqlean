@@ -124,7 +124,7 @@ static void test_to_minutes(void) {
     for (size_t i = 0; i < sizeof(to_minute_tests) / sizeof(to_minute_tests[0]); i++) {
         ToMinuteTest test = to_minute_tests[i];
         double got = dur_to_minutes(test.d);
-        printf("want %lf, got %lf\n", test.want, got);
+        //printf("want %lf, got %lf\n", test.want, got);
         assert(got == test.want);
     }
     printf("OK\n");
@@ -144,7 +144,7 @@ static void test_to_hours(void) {
     for (size_t i = 0; i < sizeof(to_hour_tests) / sizeof(to_hour_tests[0]); i++) {
         ToHourTest test = to_hour_tests[i];
         double got = dur_to_hours(test.d);
-        printf("want %lf, got %lf\n", test.want, got);
+        //printf("want %lf, got %lf\n", test.want, got);
         assert(got == test.want);
     }
     printf("OK\n");
