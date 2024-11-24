@@ -125,6 +125,7 @@ static void test_to_minutes(void) {
         ToMinuteTest test = to_minute_tests[i];
         double got = dur_to_minutes(test.d);
         (got == test.want) || printf("in %ld: want %lf, got %lf\n", test.d,test.want, got );
+        fflush(stdout);
         assert(got == test.want);
     }
     printf("OK\n");
