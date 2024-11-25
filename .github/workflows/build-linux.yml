@@ -21,7 +21,6 @@ jobs:
                 include:
                     - dist: Linux-Arm64
                       deps: gcc-aarch64-linux-gnu
-                      preamble: ''
                       host: aarch64-linux-gnu
                     - dist: Linux-IA32
                       deps: util-linux gcc-multilib
@@ -29,11 +28,9 @@ jobs:
                       host: i686-linux-gnu
                     - dist: Linux-x64
                       testable: true
-                      preamble: ''
                     - dist: Linux-x64-Musl
                       deps: musl-tools
                       host: x86_64-linux-musl
-                      preamble: ''
         steps:
             - id: deps
               name: Dependencies

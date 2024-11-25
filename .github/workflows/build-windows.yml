@@ -58,6 +58,5 @@ jobs:
               with:
                   dist: ${{ matrix.dist }}
                   host: ${{ matrix.host }}
-                  preamble: ${{ matrix.preamble }}
                   shell: ${{ matrix.shell }}
                   testable: ${{ matrix.testable }}
